@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import TaskBoard from "./TaskBoard";
+import TaskList from "./TaskList";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +34,7 @@ export default async function TasksPage() {
   });
 
   return (
-    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <header className="flex justify-between items-center mb-2">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Tasks</h1>
@@ -42,8 +42,8 @@ export default async function TasksPage() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <TaskBoard initialTasks={tasks} users={users} projects={projects} />
+      <div>
+        <TaskList initialTasks={tasks} users={users} projects={projects} />
       </div>
     </div>
   );

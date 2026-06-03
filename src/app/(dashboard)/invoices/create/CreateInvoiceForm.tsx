@@ -98,7 +98,7 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Client</label>
             <select
@@ -125,6 +125,19 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
               className="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-foreground focus:outline-none focus:border-primary/50 transition-all"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-foreground focus:outline-none focus:border-primary/50 transition-all appearance-none"
+            >
+              <option value="DRAFT" className="bg-background">Draft</option>
+              <option value="SENT" className="bg-background">Sent</option>
+              <option value="PARTIALLY_PAID" className="bg-background">Partially Paid</option>
+              <option value="PAID" className="bg-background">Paid</option>
+            </select>
+          </div>
         </div>
 
         <div>
@@ -137,6 +150,14 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
             >
               <Plus className="w-4 h-4" /> Add Item
             </button>
+          </div>
+
+          <div className="hidden md:grid grid-cols-12 gap-4 px-4 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-white/5 mb-4">
+            <div className="col-span-5">Description</div>
+            <div className="col-span-2">Quantity</div>
+            <div className="col-span-2">Price</div>
+            <div className="col-span-2 text-right">Amount</div>
+            <div className="col-span-1"></div>
           </div>
 
           <div className="space-y-4">
@@ -170,7 +191,7 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
                   />
                 </div>
                 <div className="col-span-4 md:col-span-2">
-                  <label className="block text-xs font-medium text-muted-foreground mb-1 md:hidden">Rate</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1 md:hidden">Price</label>
                   <input
                     type="number"
                     min="0"
@@ -183,7 +204,7 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
                 </div>
                 <div className="col-span-3 md:col-span-2 text-right">
                   <label className="block text-xs font-medium text-muted-foreground mb-1 md:hidden">Amount</label>
-                  <span className="font-medium">${(item.quantity * item.rate).toFixed(2)}</span>
+                  <span className="font-medium">₹{(item.quantity * item.rate).toFixed(2)}</span>
                 </div>
                 <div className="col-span-1 flex justify-end">
                   <button
@@ -204,7 +225,7 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
           <div className="w-full max-w-sm space-y-4">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center text-muted-foreground py-2">
               <span>Apply GST (18%)</span>
@@ -219,13 +240,13 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
             {withGst && (
               <div className="flex justify-between text-muted-foreground">
                 <span>GST Amount</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>₹{tax.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Discount</span>
               <div className="flex items-center">
-                <span className="mr-2 text-muted-foreground">$</span>
+                <span className="mr-2 text-muted-foreground">₹</span>
                 <input
                   type="number"
                   min="0"
@@ -238,7 +259,7 @@ export default function CreateInvoiceForm({ clients }: { clients: any[] }) {
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-white/10">
               <span className="text-lg font-bold text-foreground">Grand Total</span>
-              <span className="text-2xl font-bold text-primary">${Math.max(0, grandTotal).toFixed(2)}</span>
+              <span className="text-2xl font-bold text-primary">₹{Math.max(0, grandTotal).toFixed(2)}</span>
             </div>
           </div>
         </div>

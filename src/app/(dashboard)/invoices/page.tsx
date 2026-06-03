@@ -82,7 +82,7 @@ export default async function InvoicesPage() {
                     <div className="text-xs text-muted-foreground">Due: {new Date(invoice.dueDate).toLocaleDateString()}</div>
                   </td>
                   <td className="px-6 py-4 font-semibold text-foreground">
-                    ${invoice.grandTotal.toFixed(2)}
+                    ₹{invoice.grandTotal.toFixed(2)}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(invoice.status)}`}>

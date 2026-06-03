@@ -20,6 +20,7 @@ export default function ClientListClient({ initialClients }: { initialClients: C
   const [clients, setClients] = useState<ClientType[]>(initialClients);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<ClientType | null>(null);
   const router = useRouter();
 
   const filteredClients = clients.filter(c => 
@@ -39,10 +40,24 @@ export default function ClientListClient({ initialClients }: { initialClients: C
     }
   };
 
-  const handleClientAdded = (newClient: any) => {
-    // Assuming the API returns the client. We need to add _count for the UI
-    setClients([{ ...newClient, _count: { projects: 0, invoices: 0 } }, ...clients]);
+  const handleClientSaved = (savedClient: any) => {
+    if (clientToEdit) {
+      setClients(clients.map(c => c.id === savedClient.id ? { ...savedClient, _count: c._count } : c));
+    } else {
+      setClients([{ ...savedClient, _count: { projects: 0, invoices: 0 } }, ...clients]);
+    }
+    setClientToEdit(null);
     router.refresh();
+  };
+
+  const openEditModal = (client: ClientType) => {
+    setClientToEdit(client);
+    setIsModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsModalOpen(false);
+    setClientToEdit(null);
   };
 
   return (
@@ -115,7 +130,10 @@ export default function ClientListClient({ initialClients }: { initialClients: C
                         <Link href={`/clients/${client.id}`} className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-primary transition-colors">
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                        <button 
+                          onClick={() => openEditModal(client)}
+                          className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
                       </div>
@@ -137,8 +155,9 @@ export default function ClientListClient({ initialClients }: { initialClients: C
       <AnimatePresence>
         {isModalOpen && (
           <ClientFormModal 
-            onClose={() => setIsModalOpen(false)} 
-            onSuccess={handleClientAdded} 
+            onClose={closeEditModal} 
+            onSuccess={handleClientSaved} 
+            clientToEdit={clientToEdit}
           />
         )}
       </AnimatePresence>

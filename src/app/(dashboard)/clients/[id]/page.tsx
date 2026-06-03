@@ -3,18 +3,32 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Building2, Mail, Phone, MapPin, Calendar } from "lucide-react";
 import ClientStatusUpdater from "./ClientStatusUpdater";
+import ClientOnboardingChecklist from "./ClientOnboardingChecklist";
+import ClientContacts from "./ClientContacts";
+import ClientTimeline from "./ClientTimeline";
+import FileUpload from "@/components/FileUpload";
 
 // Force dynamic rendering so we always get fresh client data
 export const dynamic = "force-dynamic";
 
-export default async function ClientDetailsPage({ params }: { params: { id: string } }) {
+export default async function ClientDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const client = await prisma.client.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       projects: true,
       invoices: {
         orderBy: { createdAt: 'desc' },
         take: 5
+      },
+      contacts: {
+        orderBy: { createdAt: 'desc' }
+      },
+      onboardingSteps: {
+        orderBy: { createdAt: 'asc' }
+      },
+      files: {
+        orderBy: { createdAt: 'desc' }
       }
     }
   });
@@ -84,8 +98,9 @@ export default async function ClientDetailsPage({ params }: { params: { id: stri
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Contact Info */}
-        <div className="glass-card p-6 rounded-2xl border border-white/5">
+        {/* Contact Info and Contacts */}
+        <div className="space-y-6">
+          <div className="glass-card p-6 rounded-2xl border border-white/5">
           <h2 className="text-lg font-medium text-foreground mb-4">Contact Information</h2>
           <div className="space-y-4">
             <div className="flex items-start gap-3 text-sm">
@@ -122,9 +137,17 @@ export default async function ClientDetailsPage({ params }: { params: { id: stri
             )}
           </div>
         </div>
+        
+        <ClientContacts clientId={client.id} contacts={client.contacts} />
+        <ClientTimeline clientId={client.id} />
+      </div>
 
-        {/* Projects & Invoices Placeholders */}
+        {/* Projects, Files & Invoices */}
         <div className="md:col-span-2 space-y-6">
+          <ClientOnboardingChecklist clientId={client.id} steps={client.onboardingSteps} />
+          
+          <FileUpload clientId={client.id} existingFiles={client.files} />
+          
           <div className="glass-card p-6 rounded-2xl border border-white/5">
             <h2 className="text-lg font-medium text-foreground mb-4">Active Projects</h2>
             {client.projects.length > 0 ? (
@@ -147,7 +170,7 @@ export default async function ClientDetailsPage({ params }: { params: { id: stri
                 {client.invoices.map(inv => (
                   <li key={inv.id} className="p-3 bg-white/5 rounded-lg border border-white/5 flex justify-between">
                     <span>{inv.invoiceNo}</span>
-                    <span className="font-medium">${inv.grandTotal.toFixed(2)}</span>
+                    <span className="font-medium">₹{inv.grandTotal.toFixed(2)}</span>
                   </li>
                 ))}
               </ul>

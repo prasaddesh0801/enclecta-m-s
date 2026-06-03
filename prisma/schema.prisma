@@ -16,9 +16,13 @@ model User {
   email     String   @unique
   password  String   // Hashed password
   role      Role     @default(EMPLOYEE)
-  tasks     Task[]   // Tasks assigned to this user
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  tasks          Task[]
+  comments       TaskComment[]
+  uploadedFiles  FileAttachment[]
+  activityLogs   ActivityLog[]
+  notifications  Notification[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 enum Role {
@@ -43,6 +47,10 @@ model Client {
   accountManagerId String?        // Reference to User ID
   projects         Project[]
   invoices         Invoice[]
+  recurringInvs    RecurringInvoice[]
+  contacts         ClientContact[]
+  onboardingSteps  OnboardingStep[]
+  files            FileAttachment[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
@@ -60,13 +68,16 @@ enum ClientStatus {
 // Projects & Tasks
 // -------------------------------------
 model Project {
-  id        String   @id @default(cuid())
-  name      String
-  clientId  String
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  tasks     Task[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  duration    Int?     // Duration in days or weeks, let's say days
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Task {
@@ -82,6 +93,9 @@ model Task {
   
   projectId   String?
   project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  comments    TaskComment[]
+  attachments FileAttachment[]
   
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -150,6 +164,7 @@ model Payment {
   invoice     Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   amount      Float
   paymentMode PaymentMode
+  transactionId String?
   paymentDate DateTime    @default(now())
   createdAt   DateTime    @default(now())
 }
@@ -160,4 +175,92 @@ enum PaymentMode {
   CASH
   CHEQUE
   ONLINE
+}
+
+// -------------------------------------
+// Phase 2 Modules
+// -------------------------------------
+model ClientContact {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  role      String?
+  createdAt DateTime @default(now())
+}
+
+model OnboardingStep {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title     String
+  isDone    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model FileAttachment {
+  id          String   @id @default(cuid())
+  url         String
+  fileName    String
+  fileSize    Int?
+  
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  taskId      String?
+  task        Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  uploadedById String
+  uploadedBy   User    @relation(fields: [uploadedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
+
+// -------------------------------------
+// Phase 3 Modules
+// -------------------------------------
+model ActivityLog {
+  id          String   @id @default(cuid())
+  entityId    String
+  entityType  String
+  action      String
+  description String
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  link        String?
+  createdAt   DateTime @default(now())
+}
+
+model RecurringInvoice {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amount      Float
+  frequency   String   // "WEEKLY", "MONTHLY", "YEARLY"
+  nextRun     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

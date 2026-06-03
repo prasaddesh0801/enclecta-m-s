@@ -7,15 +7,16 @@ import { X } from "lucide-react";
 type ClientFormModalProps = {
   onClose: () => void;
   onSuccess: (client: any) => void;
+  clientToEdit?: any;
 };
 
-export default function ClientFormModal({ onClose, onSuccess }: ClientFormModalProps) {
+export default function ClientFormModal({ onClose, onSuccess, clientToEdit }: ClientFormModalProps) {
   const [formData, setFormData] = useState({
-    name: "",
-    companyName: "",
-    email: "",
-    phone: "",
-    status: "LEAD"
+    name: clientToEdit?.name || "",
+    companyName: clientToEdit?.companyName || "",
+    email: clientToEdit?.email || "",
+    phone: clientToEdit?.phone || "",
+    status: clientToEdit?.status || "LEAD"
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,8 +27,11 @@ export default function ClientFormModal({ onClose, onSuccess }: ClientFormModalP
     setError("");
 
     try {
-      const res = await fetch("/api/clients", {
-        method: "POST",
+      const url = clientToEdit ? `/api/clients/${clientToEdit.id}` : "/api/clients";
+      const method = clientToEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -66,7 +70,7 @@ export default function ClientFormModal({ onClose, onSuccess }: ClientFormModalP
         className="relative w-full max-w-lg glass-card rounded-2xl shadow-2xl overflow-hidden border border-white/10"
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-foreground">Add New Client</h2>
+          <h2 className="text-xl font-semibold text-foreground">{clientToEdit ? "Edit Client" : "Add New Client"}</h2>
           <button 
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-full text-muted-foreground transition-colors"

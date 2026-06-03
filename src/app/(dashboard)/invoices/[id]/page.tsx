@@ -7,9 +7,10 @@ import InvoiceStatusUpdater from "./InvoiceStatusUpdater";
 
 export const dynamic = "force-dynamic";
 
-export default async function InvoiceDetailsPage({ params }: { params: { id: string } }) {
+export default async function InvoiceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const invoice = await prisma.invoice.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       client: true,
       items: true
@@ -19,7 +20,7 @@ export default async function InvoiceDetailsPage({ params }: { params: { id: str
   if (!invoice) notFound();
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto print:max-w-none print:mx-0 print:w-full print:space-y-0">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 print:hidden">
         <div className="flex items-center gap-4">
           <Link href="/invoices" className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -30,10 +31,18 @@ export default async function InvoiceDetailsPage({ params }: { params: { id: str
         <div className="flex items-center gap-3">
           <InvoiceStatusUpdater invoiceId={invoice.id} currentStatus={invoice.status} />
           <PrintButton />
+          <a 
+            href={`/api/invoices/${invoice.id}/pdf`} 
+            download 
+            className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-xl font-medium transition-colors hover:bg-white/90"
+          >
+            <Download className="w-4 h-4" />
+            PDF
+          </a>
         </div>
       </header>
 
-      <div id="invoice-printable-area" className="glass-card rounded-2xl border border-white/5 overflow-hidden bg-white text-slate-900 print:shadow-none print:border-none print:m-0 print:p-0">
+      <div id="invoice-printable-area" className="bg-white rounded-2xl border border-white/10 overflow-hidden text-slate-900 shadow-xl print:shadow-none print:border-none print:m-0 print:p-0">
         <div className="p-10">
           <div className="flex justify-between items-start border-b border-slate-200 pb-8 mb-8">
             <div>
@@ -80,8 +89,8 @@ export default async function InvoiceDetailsPage({ params }: { params: { id: str
                 <tr key={i}>
                   <td className="py-4 text-slate-600">{item.description}</td>
                   <td className="py-4 text-slate-600 text-center">{item.quantity}</td>
-                  <td className="py-4 text-slate-600 text-right">${item.rate.toFixed(2)}</td>
-                  <td className="py-4 font-medium text-slate-800 text-right">${item.amount.toFixed(2)}</td>
+                  <td className="py-4 text-slate-600 text-right">₹{item.rate.toFixed(2)}</td>
+                  <td className="py-4 font-medium text-slate-800 text-right">₹{item.amount.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -91,28 +100,49 @@ export default async function InvoiceDetailsPage({ params }: { params: { id: str
             <div className="w-1/2 min-w-[250px]">
               <div className="flex justify-between py-2 text-slate-600">
                 <span>Subtotal</span>
-                <span>${invoice.subtotal.toFixed(2)}</span>
+                <span>₹{invoice.subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between py-2 text-slate-600">
-                <span>Tax (10%)</span>
-                <span>${invoice.tax.toFixed(2)}</span>
-              </div>
+              {invoice.tax > 0 && (
+                <div className="flex justify-between py-2 text-slate-600">
+                  <span>Tax</span>
+                  <span>₹{invoice.tax.toFixed(2)}</span>
+                </div>
+              )}
               {invoice.discount > 0 && (
                 <div className="flex justify-between py-2 text-emerald-600">
                   <span>Discount</span>
-                  <span>-${invoice.discount.toFixed(2)}</span>
+                  <span>-₹{invoice.discount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between py-4 border-t-2 border-slate-800 mt-2">
                 <span className="text-xl font-bold text-slate-800">Grand Total</span>
-                <span className="text-xl font-bold text-indigo-600">${invoice.grandTotal.toFixed(2)}</span>
+                <span className={`text-xl font-bold ${invoice.status === 'PAID' ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                  ₹{invoice.grandTotal.toFixed(2)}
+                </span>
+              </div>
+              
+              <div className="flex justify-end mt-4">
+                <div className={`px-4 py-2 font-bold uppercase tracking-wider rounded-lg border-2 ${
+                  invoice.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                  invoice.status === 'OVERDUE' ? 'bg-red-50 text-red-700 border-red-200' :
+                  invoice.status === 'PARTIALLY_PAID' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                  'bg-slate-50 text-slate-600 border-slate-200'
+                }`}>
+                  {invoice.status === 'PAID' ? 'PAID SUCCESSFULLY' : `STATUS: ${invoice.status.replace("_", " ")}`}
+                </div>
               </div>
             </div>
           </div>
 
           <div className="mt-16 pt-8 border-t border-slate-200 text-slate-500 text-sm text-center">
-            <p>Please make payment within 30 days of receiving this invoice.</p>
-            <p className="font-medium mt-1">Thank you for your business!</p>
+            {invoice.status === 'PAID' ? (
+              <p className="font-medium text-emerald-600 text-base">Payment received in full. Thank you for your business!</p>
+            ) : (
+              <>
+                <p>Please make payment within 30 days of receiving this invoice.</p>
+                <p className="font-medium mt-1">Thank you for your business!</p>
+              </>
+            )}
           </div>
         </div>
       </div>
