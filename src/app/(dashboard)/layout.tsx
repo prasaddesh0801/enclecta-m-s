@@ -2,8 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, CheckSquare, FileText, Settings, LogOut, CreditCard, FolderOpen } from "lucide-react";
+import { LayoutDashboard, Users, CheckSquare, FileText, CreditCard, FolderOpen } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
+import SignOutButton from "@/components/SignOutButton";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({
@@ -27,7 +28,7 @@ export default async function DashboardLayout({
       {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 bg-card/50 backdrop-blur-xl flex flex-col transition-all z-50 print:hidden">
         <div className="p-6 pb-2">
-          <h1 className="text-2xl font-bold text-gradient tracking-tight mb-6">Enclekta</h1>
+          <h1 className="text-2xl font-bold text-gradient tracking-tight mb-6">Enclecta</h1>
           <div className="flex items-center gap-3 mb-2 px-2">
             <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-bold text-primary shrink-0">
               {session.user?.name?.charAt(0) || "U"}
@@ -52,10 +53,7 @@ export default async function DashboardLayout({
         </nav>
 
         <div className="p-4 border-t border-white/10">
-          <Link href="/api/auth/signout" className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-            <LogOut className="w-5 h-5" />
-            <span className="text-sm font-medium">Sign Out</span>
-          </Link>
+          <SignOutButton />
         </div>
       </aside>
 

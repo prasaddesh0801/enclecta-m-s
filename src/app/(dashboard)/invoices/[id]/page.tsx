@@ -50,7 +50,7 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
               <p className="text-slate-500 font-medium mt-1">{invoice.invoiceNo}</p>
             </div>
             <div className="text-right">
-              <h2 className="text-xl font-bold text-slate-800">Enclekta Inc.</h2>
+              <h2 className="text-xl font-bold text-slate-800">Enclecta Inc.</h2>
               <p className="text-slate-500 text-sm mt-1">123 Tech Boulevard<br/>Suite 400<br/>San Francisco, CA 94105</p>
             </div>
           </div>

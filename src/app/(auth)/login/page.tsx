@@ -55,7 +55,7 @@ export default function LoginPage() {
             <LogIn className="text-primary w-6 h-6" />
           </div>
           <h2 className="text-3xl font-bold text-foreground">Welcome Back</h2>
-          <p className="text-muted-foreground mt-2">Sign in to your Enclekta workspace</p>
+          <p className="text-muted-foreground mt-2">Sign in to your Enclecta workspace</p>
         </div>
 
         {error && (

@@ -90,8 +90,8 @@ export default async function InvoicesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link href={`/invoices/${invoice.id}`} className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-primary transition-colors">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link href={`/invoices/${invoice.id}`} className="p-2 hover:bg-white/10 rounded-lg text-white hover:text-primary transition-colors">
                         View
                       </Link>
                     </div>

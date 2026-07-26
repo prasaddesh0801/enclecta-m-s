@@ -87,7 +87,7 @@ export default function ProjectListClient({ initialProjects, clients }: { initia
                       {project._count.tasks}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
+                      <button className="p-2 hover:bg-white/10 rounded-lg text-white hover:text-primary transition-colors">
                         <MoreVertical className="w-4 h-4" />
                       </button>
                     </td>

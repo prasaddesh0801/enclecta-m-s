@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Enclekta | Company Management System",
+  title: "Enclecta | Company Management System",
   description: "Advanced company management, task tracking, and invoicing",
 };
 

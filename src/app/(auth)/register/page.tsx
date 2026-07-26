@@ -63,7 +63,7 @@ export default function RegisterPage() {
             <UserPlus className="text-primary w-6 h-6" />
           </div>
           <h2 className="text-3xl font-bold text-foreground">Create Account</h2>
-          <p className="text-muted-foreground mt-2">Join the Enclekta workspace</p>
+          <p className="text-muted-foreground mt-2">Join the Enclecta workspace</p>
         </div>
 
         {error && (

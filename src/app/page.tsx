@@ -33,7 +33,7 @@ export default function Home() {
         </div>
         
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 text-foreground drop-shadow-sm">
-          Welcome to <span className="text-gradient">Enclekta</span>
+          Welcome to <span className="text-gradient">Enclecta</span>
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl leading-relaxed">
