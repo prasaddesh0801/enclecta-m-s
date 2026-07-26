@@ -58,7 +58,7 @@ export async function GET(
 
     await browser.close();
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer).buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

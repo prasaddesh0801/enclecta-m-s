@@ -107,7 +107,7 @@ export default function TaskBoard({ initialTasks, users, projects }: { initialTa
                       exit={{ opacity: 0, scale: 0.95 }}
                       key={task.id}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, task.id)}
+                      onDragStartCapture={(e) => handleDragStart(e, task.id)}
                       className="bg-black/20 border border-white/10 p-4 rounded-xl cursor-grab active:cursor-grabbing hover:border-white/20 transition-colors"
                     >
                       <div className="flex justify-between items-start mb-2">
