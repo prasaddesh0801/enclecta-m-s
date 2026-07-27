@@ -1,10 +1,16 @@
-import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { createElement } from "react";
+import { renderToBuffer } from "@react-pdf/renderer";
+import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import puppeteer from "puppeteer";
+import InvoicePdfDocument from "@/components/InvoicePdfDocument";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(
-  req: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -14,61 +20,31 @@ export async function GET(
     }
 
     const { id } = await params;
-
-    // Determine the base URL for the local server
-    const protocol = req.headers.get("x-forwarded-proto") || "http";
-    const host = req.headers.get("host");
-    const baseUrl = `${protocol}://${host}`;
-
-    // Get the session cookie to pass to Puppeteer so it can access the protected page
-    const cookies = req.headers.get("cookie") || "";
-
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      include: { client: true, items: true },
     });
 
-    const page = await browser.newPage();
-
-    // Parse cookies and set them
-    if (cookies) {
-      const cookieArray = cookies.split(";").map((c) => {
-        const [name, ...rest] = c.trim().split("=");
-        return {
-          name,
-          value: rest.join("="),
-          domain: host?.split(":")[0] || "localhost",
-          path: "/",
-        };
-      });
-      await page.setCookie(...cookieArray);
+    if (!invoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Navigate to the invoice page and wait for it to load completely
-    await page.goto(`${baseUrl}/invoices/${id}`, { waitUntil: "networkidle0" });
+    const document = createElement(InvoicePdfDocument, { invoice });
+    const pdf = await renderToBuffer(document as Parameters<typeof renderToBuffer>[0]);
+    const filename = invoice.invoiceNo.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-    // Add a class or run a script if necessary to hide elements (we already have print:hidden in CSS)
-
-    // Generate PDF
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "10px", right: "10px", bottom: "10px", left: "10px" },
-    });
-
-    await browser.close();
-
-    return new NextResponse(new Uint8Array(pdfBuffer).buffer, {
-      status: 200,
+    return new NextResponse(pdf.buffer as ArrayBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Invoice-${id}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}.pdf"`,
+        "Content-Length": String(pdf.byteLength),
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    console.error("Error generating invoice PDF:", error);
     return NextResponse.json(
-      { error: "Failed to generate PDF." },
+      { error: "Failed to generate the invoice PDF." },
       { status: 500 },
     );
   }

@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     if (invoice) {
       // 3. Update invoice status based on total payments
-      const totalPaid = invoice.payments.reduce((acc, p) => acc + p.amount, 0);
+      const totalPaid = invoice.advanceAmount + invoice.payments.reduce((acc, p) => acc + p.amount, 0);
       let newStatus = invoice.status;
 
       if (totalPaid >= invoice.grandTotal) {

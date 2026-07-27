@@ -32,7 +32,7 @@ export default function RecordPaymentModal({ invoices }: { invoices: any[] }) {
     const invoice = invoices.find(inv => inv.id === invId);
     
     if (invoice) {
-      const paidAlready = invoice.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+      const paidAlready = invoice.advanceAmount + (invoice.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0);
       const remaining = Math.max(0, invoice.grandTotal - paidAlready);
       setFormData({ ...formData, invoiceId: invId, amount: remaining.toString() });
     } else {
@@ -102,7 +102,7 @@ export default function RecordPaymentModal({ invoices }: { invoices: any[] }) {
                 >
                   <option value="" className="bg-[#1c2128]">Select unpaid invoice...</option>
                   {invoices.map(inv => {
-                    const paidAlready = inv.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+                    const paidAlready = inv.advanceAmount + (inv.payments?.reduce((acc: number, p: any) => acc + p.amount, 0) || 0);
                     const remaining = Math.max(0, inv.grandTotal - paidAlready);
                     return (
                       <option key={inv.id} value={inv.id} className="bg-[#1c2128]">

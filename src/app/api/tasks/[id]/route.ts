@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { notifyTaskAssigned } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(
@@ -16,6 +17,15 @@ export async function PUT(
     const { id } = await params;
 
     const body = await req.json();
+    const existingTask = await prisma.task.findUnique({
+      where: { id },
+      select: { assigneeId: true },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json({ message: "Task not found" }, { status: 404 });
+    }
+
     const { dueDate, ...otherData } = body;
     
     const updateData = { ...otherData };
@@ -31,6 +41,22 @@ export async function PUT(
         project: { select: { id: true, name: true } }
       }
     });
+
+    const assignmentChanged =
+      Object.prototype.hasOwnProperty.call(body, "assigneeId") &&
+      body.assigneeId !== existingTask.assigneeId;
+
+    if (assignmentChanged) {
+      try {
+        await notifyTaskAssigned({
+          taskId: updatedTask.id,
+          taskTitle: updatedTask.title,
+          assigneeId: updatedTask.assigneeId,
+        });
+      } catch (notificationError) {
+        console.error("Task assignment notification error:", notificationError);
+      }
+    }
 
     return NextResponse.json(updatedTask);
   } catch (error) {
