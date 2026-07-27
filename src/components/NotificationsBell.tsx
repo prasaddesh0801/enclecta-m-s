@@ -1,16 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bell, Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function NotificationsBell({ initialNotifications }: { initialNotifications: any[] }) {
+type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  link: string | null;
+};
+
+export default function NotificationsBell({ initialNotifications }: { initialNotifications: Notification[] }) {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
-  // Close dropdown if clicked outside would be nice, but keep simple for MVP
+  const refreshNotifications = useCallback(async () => {
+    try {
+      const response = await fetch("/api/notifications", { cache: "no-store" });
+      if (response.ok) {
+        setNotifications(await response.json());
+      }
+    } catch (error) {
+      console.error("Unable to refresh notifications:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(refreshNotifications, 30_000);
+    const refreshOnFocus = () => void refreshNotifications();
+    window.addEventListener("focus", refreshOnFocus);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, [refreshNotifications]);
 
   const markAsRead = async (id: string) => {
     try {
@@ -25,7 +52,10 @@ export default function NotificationsBell({ initialNotifications }: { initialNot
   return (
     <div className="relative">
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen) void refreshNotifications();
+          setIsOpen(!isOpen);
+        }}
         className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-full transition-colors"
       >
         <Bell className="w-5 h-5" />
@@ -41,7 +71,7 @@ export default function NotificationsBell({ initialNotifications }: { initialNot
           </div>
           <div className="max-h-[300px] overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground p-6 text-center italic">You're all caught up!</p>
+              <p className="text-sm text-muted-foreground p-6 text-center italic">You&apos;re all caught up!</p>
             ) : (
               notifications.map(n => (
                 <div key={n.id} className="p-4 border-b border-white/5 hover:bg-white/5 transition-colors flex gap-3 relative group">

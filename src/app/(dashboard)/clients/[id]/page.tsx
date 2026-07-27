@@ -7,6 +7,7 @@ import ClientOnboardingChecklist from "./ClientOnboardingChecklist";
 import ClientContacts from "./ClientContacts";
 import ClientTimeline from "./ClientTimeline";
 import FileUpload from "@/components/FileUpload";
+import { formatDate } from "@/lib/date";
 
 // Force dynamic rendering so we always get fresh client data
 export const dynamic = "force-dynamic";
@@ -146,7 +147,7 @@ export default async function ClientDetailsPage({ params }: { params: Promise<{ 
               <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div>
                 <p className="font-medium text-foreground">Created At</p>
-                <p className="text-muted-foreground">{new Date(client.createdAt).toLocaleDateString()}</p>
+                <p className="text-muted-foreground">{formatDate(client.createdAt)}</p>
               </div>
             </div>
             {client.address && (

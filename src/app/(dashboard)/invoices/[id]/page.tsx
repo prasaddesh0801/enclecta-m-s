@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Printer, Download, CreditCard } from "lucide-react";
 import PrintButton from "./PrintButton";
 import InvoiceStatusUpdater from "./InvoiceStatusUpdater";
+import { formatDate } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -66,11 +67,11 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
             <div className="text-right">
               <div className="mb-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Issue Date</p>
-                <p className="font-medium text-slate-800">{new Date(invoice.createdAt).toLocaleDateString()}</p>
+                <p className="font-medium text-slate-800">{formatDate(invoice.createdAt)}</p>
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</p>
-                <p className="font-medium text-slate-800">{new Date(invoice.dueDate).toLocaleDateString()}</p>
+                <p className="font-medium text-slate-800">{formatDate(invoice.dueDate)}</p>
               </div>
             </div>
           </div>
@@ -120,6 +121,18 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                   ₹{invoice.grandTotal.toFixed(2)}
                 </span>
               </div>
+              {invoice.advanceAmount > 0 && (
+                <>
+                  <div className="flex justify-between py-2 text-emerald-600">
+                    <span>Advance paid</span>
+                    <span>₹{invoice.advanceAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-3 font-semibold text-slate-800">
+                    <span>Balance due</span>
+                    <span>₹{Math.max(0, invoice.grandTotal - invoice.advanceAmount).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
               
               <div className="flex justify-end mt-4">
                 <div className={`px-4 py-2 font-bold uppercase tracking-wider rounded-lg border-2 ${

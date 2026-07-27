@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { CreditCard, Calendar, FileText } from "lucide-react";
 import RecordPaymentModal from "./RecordPaymentModal";
+import { formatDate } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export default async function PaymentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="w-4 h-4" />
-                        {new Date(payment.paymentDate).toLocaleDateString()}
+                        {formatDate(payment.paymentDate)}
                       </div>
                     </td>
                     <td className="px-6 py-4">

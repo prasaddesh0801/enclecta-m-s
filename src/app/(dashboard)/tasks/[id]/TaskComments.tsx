@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { addTaskComment } from "./actions";
+import { formatDateTime } from "@/lib/date";
 
 export default function TaskComments({ taskId, comments, currentUserId }: { taskId: string, comments: any[], currentUserId: string }) {
   const [newComment, setNewComment] = useState("");
@@ -51,7 +52,7 @@ export default function TaskComments({ taskId, comments, currentUserId }: { task
                 </div>
                 <div className={`text-[10px] text-muted-foreground mt-1 ${isMine ? 'mr-1' : 'ml-10'}`}>
                   {!isMine && <span className="font-medium">{comment.user.name} • </span>}
-                  {new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatDateTime(comment.createdAt)}
                 </div>
               </div>
             );

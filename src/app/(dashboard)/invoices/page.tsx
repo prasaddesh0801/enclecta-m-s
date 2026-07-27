@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Plus, Search, FileText, Download, MoreVertical } from "lucide-react";
+import { formatDate } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,15 @@ export default async function InvoicesPage() {
       case "OVERDUE": return "bg-red-500/20 text-red-400 border-red-500/30";
       case "CANCELLED": return "bg-gray-800/50 text-gray-500 border-gray-700";
       default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "SENT": return "Unpaid";
+      case "PARTIALLY_PAID": return "Advance";
+      case "PAID": return "Paid";
+      default: return status.replace("_", " ");
     }
   };
 
@@ -59,7 +69,7 @@ export default async function InvoicesPage() {
                 <th className="px-6 py-4 font-medium">Invoice #</th>
                 <th className="px-6 py-4 font-medium">Client</th>
                 <th className="px-6 py-4 font-medium">Date / Due</th>
-                <th className="px-6 py-4 font-medium">Amount</th>
+                <th className="px-6 py-4 font-medium">Total / Paid</th>
                 <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
@@ -78,15 +88,20 @@ export default async function InvoicesPage() {
                     <div className="text-xs text-muted-foreground">{invoice.client.name}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-foreground">{new Date(invoice.createdAt).toLocaleDateString()}</div>
-                    <div className="text-xs text-muted-foreground">Due: {new Date(invoice.dueDate).toLocaleDateString()}</div>
+                    <div className="text-sm text-foreground">{formatDate(invoice.createdAt)}</div>
+                    <div className="text-xs text-muted-foreground">Due: {formatDate(invoice.dueDate)}</div>
                   </td>
-                  <td className="px-6 py-4 font-semibold text-foreground">
-                    ₹{invoice.grandTotal.toFixed(2)}
+                  <td className="px-6 py-4">
+                    <div className="font-semibold text-foreground">₹{invoice.grandTotal.toFixed(2)}</div>
+                    <div className="mt-1 text-xs text-emerald-400">
+                      {invoice.status === "PAID" ? "Paid" : "Advance paid"}: ₹{
+                        (invoice.status === "PAID" ? invoice.grandTotal : invoice.advanceAmount).toFixed(2)
+                      }
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(invoice.status)}`}>
-                      {invoice.status.replace("_", " ")}
+                      {getStatusLabel(invoice.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">

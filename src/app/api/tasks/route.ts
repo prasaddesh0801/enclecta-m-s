@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import type { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
+import { notifyTaskAssigned } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
@@ -17,7 +19,7 @@ export async function GET(req: Request) {
     // Employee role only sees their own tasks unless fetching by project
     const isEmployee = session.user?.role === "EMPLOYEE";
     
-    let whereClause: any = {};
+    const whereClause: Prisma.TaskWhereInput = {};
     if (projectId) whereClause.projectId = projectId;
     if (assigneeId) whereClause.assigneeId = assigneeId;
     if (isEmployee) whereClause.assigneeId = session.user.id;
@@ -71,6 +73,16 @@ export async function POST(req: Request) {
         project: { select: { id: true, name: true } }
       }
     });
+
+    try {
+      await notifyTaskAssigned({
+        taskId: task.id,
+        taskTitle: task.title,
+        assigneeId: task.assigneeId,
+      });
+    } catch (notificationError) {
+      console.error("Task notification error:", notificationError);
+    }
 
     return NextResponse.json(task, { status: 201 });
   } catch (error) {

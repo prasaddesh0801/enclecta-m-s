@@ -6,6 +6,7 @@ import TaskComments from "./TaskComments";
 import FileUpload from "@/components/FileUpload";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { formatDate } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,7 @@ export default async function TaskDetailsPage({ params }: { params: Promise<{ id
                 <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="font-medium text-foreground">Created</p>
-                  <p className="text-muted-foreground">{new Date(task.createdAt).toLocaleDateString()}</p>
+                  <p className="text-muted-foreground">{formatDate(task.createdAt)}</p>
                 </div>
               </div>
               {task.dueDate && (
@@ -99,7 +100,7 @@ export default async function TaskDetailsPage({ params }: { params: Promise<{ id
                   <Clock className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="font-medium text-foreground">Due Date</p>
-                    <p className="text-muted-foreground">{new Date(task.dueDate).toLocaleDateString()}</p>
+                    <p className="text-muted-foreground">{formatDate(task.dueDate)}</p>
                   </div>
                 </div>
               )}

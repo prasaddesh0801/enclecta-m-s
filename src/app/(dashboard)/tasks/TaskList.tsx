@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import TaskFormModal from "./TaskFormModal";
+import { formatDate } from "@/lib/date";
 
 type TaskType = {
   id: string;
@@ -121,7 +122,7 @@ export default function TaskList({ initialTasks, users, projects }: { initialTas
                     {task.dueDate ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="w-4 h-4 shrink-0" />
-                        {new Date(task.dueDate).toLocaleDateString()}
+                        {formatDate(task.dueDate)}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>

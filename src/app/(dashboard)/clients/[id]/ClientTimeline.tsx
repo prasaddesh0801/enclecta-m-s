@@ -1,5 +1,6 @@
 import { Activity } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { formatDateTime } from "@/lib/date";
 
 export default async function ClientTimeline({ clientId }: { clientId: string }) {
   const logs = await prisma.activityLog.findMany({
@@ -25,7 +26,7 @@ export default async function ClientTimeline({ clientId }: { clientId: string })
                 <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 bg-primary rounded-full ring-4 ring-[#0a0a0a]"></div>
                 <p className="text-sm text-foreground">{log.description}</p>
                 <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider font-semibold">
-                  {new Date(log.createdAt).toLocaleDateString()} • {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatDateTime(log.createdAt)}
                 </p>
               </div>
             ))}

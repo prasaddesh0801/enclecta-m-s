@@ -1,7 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateTime } from "@/lib/date";
 import { Users, FileText, CheckSquare, CreditCard, Clock, Activity, AlertCircle } from "lucide-react";
+import RevenueChart, { type RevenueChartPoint } from "./RevenueChart";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +28,27 @@ export default async function DashboardPage() {
   const overdueInvoicesCount = await prisma.invoice.count({ where: { status: "OVERDUE" } });
 
   // Revenue Calcs
-  const invoices = await prisma.invoice.findMany({ select: { grandTotal: true } });
-  const totalInvoiceAmount = invoices.reduce((acc, curr) => acc + curr.grandTotal, 0);
-  
-  const payments = await prisma.payment.findMany({ select: { amount: true } });
-  const paidAmount = payments.reduce((acc, curr) => acc + curr.amount, 0);
+  const invoices = await prisma.invoice.findMany({
+    select: {
+      grandTotal: true,
+      advanceAmount: true,
+      status: true,
+      createdAt: true,
+      payments: {
+        select: {
+          amount: true,
+          paymentDate: true,
+        },
+        orderBy: { paymentDate: "asc" },
+      },
+    },
+  });
+  const billableInvoices = invoices.filter(invoice => invoice.status !== "CANCELLED");
+  const totalInvoiceAmount = billableInvoices.reduce((acc, curr) => acc + curr.grandTotal, 0);
+  const paidAmount = billableInvoices.reduce((acc, curr) => acc + getInvoiceReceivedAmount(curr), 0);
   const pendingAmount = Math.max(0, totalInvoiceAmount - paidAmount);
+  const revenueChartData = buildRevenueChartData(billableInvoices, now);
+  const revenueChartTotals = getRevenueChartTotals(revenueChartData);
 
   // Recent Activities
   let activities = [];
@@ -81,16 +98,10 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-        {/* Revenue Overview Placeholder */}
-        <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-white/5 flex flex-col items-center justify-center min-h-[300px]">
-          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-            <Activity className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium text-foreground">Revenue Overview</h3>
-          <p className="text-muted-foreground text-sm mt-1 text-center max-w-sm">
-            Revenue charting and visual analytics will be activated in the next development phase.
-          </p>
-        </div>
+        <RevenueChart
+          data={revenueChartData}
+          totals={revenueChartTotals}
+        />
 
         {/* Recent Activity Feed */}
         <div className="glass-card p-6 rounded-2xl border border-white/5 flex flex-col">
@@ -112,7 +123,7 @@ export default async function DashboardPage() {
                   <div>
                     <p className="text-sm text-foreground leading-snug">{activity.text}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {activity.date.toLocaleDateString()} at {activity.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatDateTime(activity.date)}
                     </p>
                   </div>
                 </div>
@@ -123,6 +134,118 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
+}
+
+type DashboardInvoice = {
+  grandTotal: number;
+  advanceAmount: number;
+  status: string;
+  createdAt: Date;
+  payments: Array<{
+    amount: number;
+    paymentDate: Date;
+  }>;
+};
+
+type RevenueMonthAccumulator = RevenueChartPoint & {
+  key: string;
+};
+
+function getInvoiceReceivedAmount(invoice: DashboardInvoice) {
+  if (invoice.status === "PAID") {
+    return invoice.grandTotal;
+  }
+
+  const recordedReceived =
+    invoice.advanceAmount + invoice.payments.reduce((acc, payment) => acc + payment.amount, 0);
+
+  return Math.min(invoice.grandTotal, recordedReceived);
+}
+
+function buildRevenueChartData(invoices: DashboardInvoice[], referenceDate: Date): RevenueChartPoint[] {
+  const months = createRevenueMonths(referenceDate);
+  const revenueByMonth = new Map(months.map(month => [month.key, month]));
+
+  invoices.forEach((invoice) => {
+    addToRevenueMonth(revenueByMonth, invoice.createdAt, "billed", invoice.grandTotal);
+
+    let remainingReceived = getInvoiceReceivedAmount(invoice);
+    remainingReceived = addReceivedRevenue(revenueByMonth, invoice.createdAt, invoice.advanceAmount, remainingReceived);
+
+    invoice.payments.forEach((payment) => {
+      remainingReceived = addReceivedRevenue(revenueByMonth, payment.paymentDate, payment.amount, remainingReceived);
+    });
+
+    if (remainingReceived > 0 && invoice.status === "PAID") {
+      addToRevenueMonth(revenueByMonth, invoice.createdAt, "received", remainingReceived);
+    }
+  });
+
+  return months.map((month) => ({
+    month: month.month,
+    billed: month.billed,
+    received: month.received,
+    pending: Math.max(0, month.billed - month.received),
+  }));
+}
+
+function getRevenueChartTotals(data: RevenueChartPoint[]) {
+  const billed = data.reduce((acc, month) => acc + month.billed, 0);
+  const received = data.reduce((acc, month) => acc + month.received, 0);
+
+  return {
+    billed,
+    received,
+    pending: Math.max(0, billed - received),
+  };
+}
+
+function createRevenueMonths(referenceDate: Date): RevenueMonthAccumulator[] {
+  const monthFormatter = new Intl.DateTimeFormat("en-IN", { month: "short" });
+
+  return Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - (5 - index), 1);
+
+    return {
+      key: getMonthKey(date),
+      month: monthFormatter.format(date),
+      billed: 0,
+      received: 0,
+      pending: 0,
+    };
+  });
+}
+
+function addReceivedRevenue(
+  revenueByMonth: Map<string, RevenueMonthAccumulator>,
+  date: Date,
+  amount: number,
+  remainingReceived: number,
+) {
+  const revenueToAdd = Math.min(Math.max(0, amount), remainingReceived);
+
+  if (revenueToAdd > 0) {
+    addToRevenueMonth(revenueByMonth, date, "received", revenueToAdd);
+  }
+
+  return remainingReceived - revenueToAdd;
+}
+
+function addToRevenueMonth(
+  revenueByMonth: Map<string, RevenueMonthAccumulator>,
+  date: Date,
+  field: "billed" | "received",
+  amount: number,
+) {
+  const month = revenueByMonth.get(getMonthKey(date));
+
+  if (month) {
+    month[field] += amount;
+  }
+}
+
+function getMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function StatCard({ title, value, sub, icon, alert = false }: { title: string, value: string, sub: string, icon: React.ReactNode, alert?: boolean }) {

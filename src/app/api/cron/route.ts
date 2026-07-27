@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { formatDate } from '@/lib/date';
+import { notifyInvoiceCreated } from '@/lib/notifications';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     let notificationsCreated = 0;
     
@@ -48,7 +50,7 @@ export async function GET(req: Request) {
           data: {
             userId: task.assigneeId,
             title: "Task Overdue",
-            message: `Task "${task.title}" was due on ${task.dueDate?.toLocaleDateString()}. Please update it.`,
+            message: `Task "${task.title}" was due on ${task.dueDate ? formatDate(task.dueDate) : "an unspecified date"}. Please update it.`,
             link: `/tasks/${task.id}`
           }
         });
@@ -68,7 +70,7 @@ export async function GET(req: Request) {
       const invoiceCount = await prisma.invoice.count();
       const invoiceNo = `INV-${new Date().getFullYear()}-${String(invoiceCount + 1).padStart(4, "0")}`;
       
-      await prisma.invoice.create({
+      const invoice = await prisma.invoice.create({
         data: {
           invoiceNo,
           clientId: rec.clientId,
@@ -85,6 +87,17 @@ export async function GET(req: Request) {
         }
       });
       invoicesGenerated++;
+
+      try {
+        await notifyInvoiceCreated({
+          invoiceId: invoice.id,
+          invoiceNo: invoice.invoiceNo,
+          clientName: rec.client.companyName,
+          accountManagerId: rec.client.accountManagerId,
+        });
+      } catch (notificationError) {
+        console.error("Recurring invoice notification error:", notificationError);
+      }
 
       // Log activity
       await prisma.activityLog.create({

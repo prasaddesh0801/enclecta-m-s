@@ -5,6 +5,7 @@ import { Plus, MoreVertical, Calendar, Clock, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import TaskFormModal from "./TaskFormModal";
+import { formatDate, formatShortDate } from "@/lib/date";
 
 type TaskType = {
   id: string;
@@ -131,9 +132,9 @@ export default function TaskBoard({ initialTasks, users, projects }: { initialTa
 
                       <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs text-muted-foreground">
                         {task.dueDate ? (
-                          <div className="flex items-center gap-1.5" title={new Date(task.dueDate).toLocaleDateString()}>
+                          <div className="flex items-center gap-1.5" title={formatDate(task.dueDate)}>
                             <Clock className="w-3.5 h-3.5" />
-                            <span>{new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                            <span>{formatShortDate(task.dueDate)}</span>
                           </div>
                         ) : (
                           <div></div>
